@@ -103,12 +103,13 @@ while True:
         cv2.rectangle(img, (left, top), (right, bottom), (0, 255, 0), 2)
         
         # Draw facial landmarks
-    face_landmarks_list = face_recognition.face_landmarks(rgb_small_frame, [(top//4, right//4, bottom//4, left//4)])
-    for face_landmarks in face_landmarks_list:
-        for facial_feature in face_landmarks.values():
-            for point in facial_feature:
-                pt = (point[0] * 4, point[1] * 4)
-                cv2.circle(img, pt, 2, (0, 0, 255), -1)  # Merah
+        face_landmarks_list = face_recognition.face_landmarks(rgb_small_frame, [(top//4, right//4, bottom//4, left//4)])
+        for face_landmarks in face_landmarks_list:
+            for facial_feature in face_landmarks.values():
+                for point in facial_feature:
+                    pt = (point[0] * 4, point[1] * 4)
+                    cv2.circle(img, pt, 2, (0, 0, 255), -1)  # Merah
+        
         # Recognize face
         matches = face_recognition.compare_faces(encodeListKnown, face_encoding)
         faceDis = face_recognition.face_distance(encodeListKnown, face_encoding)
