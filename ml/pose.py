@@ -1,6 +1,9 @@
 import cv2
 import mediapipe as mp
 import math
+import json
+import time
+import os
 
 def read_student_name():
     try:
@@ -100,11 +103,22 @@ def detect_pose():
                         cv2.putText(image, "Postur terlalu membungkuk", (50, 100), 
                                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
                         print("Postur terlalu membungkuk")
+                        
+                        # Simpan status bungkuk dan waktu
+                        posture_status = {
+                            "status": "slouching",
+                            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+                        }
+                        with open('posture_status.json', 'w') as json_file:
+                            json.dump(posture_status, json_file)
                     else:
                         cv2.putText(image, "Postur baik", (50, 100), 
                                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                         print("Postur baik")
-
+                    # Hapus file JSON jika postur baik
+                        if os.path.exists('posture_status.json'):
+                            os.remove('posture_status.json')
+                            print("Data postur dihapus karena siswa tegak.")
                     if is_hand_raised(results.pose_landmarks.landmark):
                         if not hand_raised:
                             points += 100
