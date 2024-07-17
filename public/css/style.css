@@ -89,3 +89,10 @@ section {
     color: red;
     margin-bottom: 15px;
 }
+.notification {
+            padding: 10px;
+            background-color: #ff0000;
+            color: white;
+            margin-bottom: 10px;
+            border-radius: 5px;
+}
