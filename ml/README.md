@@ -1,7 +1,8 @@
 **Alur Program** 
 
 
-![alur drawio (3)](https://github.com/user-attachments/assets/df1e87c7-f87b-402a-bcb0-933f1cd3cec5)
+![alur drawio (4)](https://github.com/user-attachments/assets/d93b2c8e-d6e7-4471-be9f-7e6868aa4967)
+
 
 
 program encode generator merupakan program untuk mengencode gambar dari user supaya bisa digunakan untuk mengenal user
