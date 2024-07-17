@@ -16,6 +16,30 @@ $userName = ''; // Nama user jika sudah login
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EduPulse - Dashboard</title>
     <link rel="stylesheet" href="public/css/style.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        function checkPostureStatus() {
+            $.ajax({
+                url: 'posture_status.json',
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    if (data.status === 'slouching') {
+                        $('#notification').text('Siswa sedang bungkuk! Waktu: ' + data.timestamp).show();
+                        document.getElementById('alert-sound').play();
+                    } else {
+                        $('#notification').hide();
+                    }
+                },
+                
+            });
+        }
+    
+        $(document).ready(function() {
+            checkPostureStatus(); // Periksa status pertama kali
+            setInterval(checkPostureStatus, 2000); // Periksa status setiap 2 detik
+        });
+    </script>
 </head>
 <body>
     <nav class="navbar">
@@ -52,7 +76,8 @@ $userName = ''; // Nama user jika sudah login
             </div>
             <div class="pose-detection">
                 <h3>Deteksi Postur</h3>
-                <!-- Toggle deteksi postur di sini -->
+                <div id="notification" class="notification" style="display: none;"></div>
+                <audio id="alert-sound" src="new-notification-7-210334.mp3" preload="auto"></audio> <!-- Tambahkan file suara di sini -->
             </div>
         </section>
         <?php endif; ?>
