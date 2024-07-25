@@ -1,6 +1,7 @@
 # Project Title
 
 EduPulse - Smart Classroom Ecosystem
+C:\Anaconda\envs\pose_detection\Group 7.png
 
 ## Description
 
