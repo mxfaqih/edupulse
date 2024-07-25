@@ -4,6 +4,62 @@ import math
 import json
 import time
 import os
+import firebase_admin
+from firebase_admin import credentials, db
+import logging
+from datetime import datetime
+from firebase_admin import storage
+import queue
+import threading
+import requests
+
+
+class VideoCapture:
+    def __init__(self, url):
+        self.cap = cv2.VideoCapture(url)
+        if not self.cap.isOpened():
+            raise ValueError(f"Error: Unable to open video stream at {url}")
+        self.q = queue.Queue()
+        self._running = True
+        t = threading.Thread(target=self._reader)
+        t.daemon = True
+        t.start()
+
+    def _reader(self):
+        while self._running:
+            ret, frame = self.cap.read()
+            if not ret:
+                self._running = False
+                break
+            if not self.q.empty():
+                try:
+                    self.q.get_nowait()
+                except queue.Empty:
+                    pass
+            self.q.put(frame)
+
+    def read(self):
+        return self.q.get()
+
+    def isOpened(self):
+        return self.cap.isOpened()
+
+    def release(self):
+        self._running = False
+        self.cap.release()
+# Initialize Firebase
+try:
+    cred = credentials.Certificate(os.getenv('FIREBASE_CREDENTIAL_PATH', 'faceattendance-a740a-firebase-adminsdk-rqxwq-0f6719139c.json'))
+    firebase_admin.initialize_app(cred, {
+        'databaseURL': os.getenv('FIREBASE_DB_URL', "https://faceattendance-a740a-default-rtdb.firebaseio.com/"),
+        'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET', "faceattendance-a740a.appspot.com")
+    })
+    bucket = storage.bucket()
+
+except Exception as e:
+    print(f"Error initializing Firebase: {e}")
+
+
 
 def read_student_name():
     try:
@@ -11,6 +67,30 @@ def read_student_name():
             return f.read().strip()
     except FileNotFoundError:
         return None
+
+def save_points_to_firebase(student_name, new_points):
+    if not student_name:
+        print("Error: Student name not found")
+        return
+
+    try:
+        ref = db.reference('interaksi')
+        student_ref = ref.child(student_name)
+        existing_data = student_ref.get()
+
+        if existing_data and 'points' in existing_data:
+            existing_points = existing_data['points']
+        else:
+            existing_points = 0
+
+        total_points = existing_points + new_points
+        student_ref.update({
+            'points': total_points
+        })
+        print(f"Points updated for {student_name}: {total_points}")
+    except Exception as e:
+        print(f"Error saving points to Firebase: {e}")
+
 
 def calculate_angle(a, b, c):
     angle = math.degrees(math.atan2(c.y - b.y, c.x - b.x) - math.atan2(a.y - b.y, a.x - b.x))
@@ -56,18 +136,24 @@ def is_hand_raised(landmarks):
         print(f"Error checking hand raised: {e}")
     return False
 
+
+
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
 
-print("Number of CUDA-enabled devices:", cv2.cuda.getCudaEnabledDeviceCount())
+URL = "http://192.168.62.186"
 
-cap = cv2.VideoCapture(0)
-if not cap.isOpened():
-    print("Error: Could not open webcam.")
-    exit()
+# Set the framesize
+try:
+    response = requests.get(URL + "/control?var=framesize&val={}".format(8))
+    response.raise_for_status()  # Raise an error for bad response status
+except requests.exceptions.RequestException as e:
+    print(f"Error setting framesize: {e}")
 
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+try:
+    cap = VideoCapture(URL + ":81/stream")
+except ValueError as e:
+    print(e)
 
 def detect_pose():
     last_student_name = None
@@ -92,8 +178,6 @@ def detect_pose():
                     student_name = read_student_name()
                     if student_name and student_name != last_student_name:
                         print(f"Student Name read from file: {student_name}")
-                        with open('student_id.txt', 'w') as f:
-                            f.write('')
                         last_student_name = student_name
                         print(f"Student Name: {student_name} read and file cleared.")
 
@@ -125,6 +209,9 @@ def detect_pose():
                             hand_raised = True
                             show_points_message = True
                             print(f"Tangan diangkat! Poin: {points}")
+                            save_points_to_firebase(student_name, points)
+                            
+                            
                     else:
                         hand_raised = False
                         show_points_message = False
