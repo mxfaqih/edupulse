@@ -1,7 +1,7 @@
 # Project Title
 
 EduPulse - Smart Classroom Ecosystem
-![Logo edupulse](ml/Group 7.png)
+![Logo edupulse](ml/Group%207.png)
 
 
 
