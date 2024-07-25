@@ -1,3 +1,17 @@
+import logging
+import signal
+import sys
+
+# Konfigurasi logging
+logging.basicConfig(filename='face_detection.log', level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
+try:
+    import face_recognition
+    logging.info('face_recognition imported successfully')
+except ImportError as e:
+    logging.error(f'Error importing face_recognition: {e}')
+    raise
+
 import os
 import pickle
 import numpy as np
@@ -8,11 +22,11 @@ from firebase_admin import credentials
 from firebase_admin import db
 from firebase_admin import storage
 from datetime import datetime
-import signal
+
 
 # Initialize Firebase
 try:
-    cred = credentials.Certificate(os.getenv('FIREBASE_CREDENTIAL_PATH', 'serviceAccountKey.json'))
+    cred = credentials.Certificate(os.getenv('FIREBASE_CREDENTIAL_PATH', 'faceattendance-a740a-firebase-adminsdk-rqxwq-0f6719139c.json'))
     firebase_admin.initialize_app(cred, {
         'databaseURL': os.getenv('FIREBASE_DB_URL', "https://faceattendance-a740a-default-rtdb.firebaseio.com/"),
         'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET', "faceattendance-a740a.appspot.com")
@@ -49,23 +63,25 @@ attendance_marked = False
 
 # Signal handler for graceful exit
 def signal_handler(sig, frame):
-    print('You pressed Ctrl+C!')
-    global cap
+    print('Stopping face detection...')
     if cap is not None:
-        cap.release()
-    cv2.destroyAllWindows()
-    exit(0)
+        cap.release()  # Release the webcam
+    cv2.destroyAllWindows()  # Close any OpenCV windows
+    sys.exit(0)  # Exit the program
 
 signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler) 
 
-def mark_attendance(student_id):
+def mark_attendance(student_id, student_name):
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     attendance_ref = db.reference(f'Attendance/{student_id}')
     attendance_ref.push().set({
         'timestamp': current_time,
-        'status': 'present'
+        'status': 'present',
+        'name': student_name  # Include student name in the attendance record
     })
-    print(f"Attendance marked for student {student_id} at {current_time}")
+    print(f"Attendance marked for student {student_id} ({student_name}) at {current_time}")
+
 
 # Open webcam
 cap = cv2.VideoCapture(0)
@@ -132,7 +148,8 @@ while True:
                     write_student_id(studentInfo['name'])
 
                     # Mark attendance
-                    mark_attendance(id)
+                    mark_attendance(id, studentInfo['name'])
+
                     attendance_marked = True
 
                     # Fetch student image
