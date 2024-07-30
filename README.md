@@ -11,7 +11,8 @@ EduPulse - Smart Classroom Ecosystem
 
 An in-depth paragraph about your project and overview of use.
 
-## Getting Started
+## Flowchart
+![Flowchart Edupulse](https://drive.google.com/uc?export=view&id=1C1jpl5H8ZvvqKqyLaKXCAUe9LSAWTvTa)
 
 ### Dependencies
 
